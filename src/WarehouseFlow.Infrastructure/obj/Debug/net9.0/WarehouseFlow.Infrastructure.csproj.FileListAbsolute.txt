@@ -1,0 +1,17 @@
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Infrastructure.deps.json
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Infrastructure.dll
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Infrastructure.pdb
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Application.dll
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Domain.dll
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Application.pdb
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\bin\Debug\net9.0\WarehouseFlow.Domain.pdb
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.AssemblyInfo.cs
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\Warehous.CFEEC2E6.Up2Date
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.dll
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\refint\WarehouseFlow.Infrastructure.dll
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\WarehouseFlow.Infrastructure.pdb
+C:\Users\ADMIN\Documents\CSharp\Truth\WarehouseFlow\src\WarehouseFlow.Infrastructure\obj\Debug\net9.0\ref\WarehouseFlow.Infrastructure.dll

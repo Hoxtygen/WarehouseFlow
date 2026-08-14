@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "BvKy8zflbBc=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ADMIN\\Documents\\CSharp\\Truth\\WarehouseFlow\\src\\WarehouseFlow.Infrastructure\\WarehouseFlow.Infrastructure.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.11\\microsoft.extensions.dependencyinjection.abstractions.10.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}
