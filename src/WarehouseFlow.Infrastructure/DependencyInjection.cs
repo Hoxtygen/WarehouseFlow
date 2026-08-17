@@ -1,14 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using WarehouseFlow.Infrastructure.Data;
 
 namespace WarehouseFlow.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            // Example: register repositories, EF DbContext, external services
-            // services.AddScoped<IProductRepository, ProductRepository>();
-            // services.AddDbContext<AppDbContext>(options => ...);
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(configuration.GetConnectionString("WarehouseFlowDb")));
 
             return services;
         }

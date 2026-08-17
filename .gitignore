@@ -1,0 +1,54 @@
+# Build outputs
+bin/
+obj/
+
+# App settings (contains connection strings/secrets - gitignored, use appsettings.Example.json)
+appsettings.json
+appsettings.*.json
+!appsettings.Example.json
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet
+packages/
+*.nuget.props
+*.nuget.targets
+
+# Rider
+.idea/
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.tmp
+*.btmp
+*.rptproj.bak
+*.rptproj.user
+*-Backup/
+*-Release/
+
+# Logs
+Logs/
+*.log
+TestResults/
+*.trx
+*.testresults
+
+# Code coverage
+*.coverage
+*.coveragexml
+coverage/
+coverage.cobertura.xml
+
+# ReSharper
+*.DotSettings.user
+
+# .NET
+*.cache
+*.shadow
+.dotnet/
