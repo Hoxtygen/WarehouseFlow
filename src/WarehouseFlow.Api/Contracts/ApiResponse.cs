@@ -19,6 +19,7 @@ namespace WarehouseFlow.Api.Contracts
                 StatusCode = statusCode,
                 Message = message,
                 Success = true,
+                Errors = null,
             };
 
         public static ApiResponse<T> CreatedResult(T data, string? message = null) =>
@@ -33,7 +34,7 @@ namespace WarehouseFlow.Api.Contracts
             {
                 Success = false,
                 Message = message,
-                Errors = errors?.ToList(),
+                Errors = errors?.ToArray() ?? Array.Empty<string>(),
                 StatusCode = statusCode,
             };
     }

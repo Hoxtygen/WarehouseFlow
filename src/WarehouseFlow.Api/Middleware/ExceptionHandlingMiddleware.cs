@@ -48,6 +48,15 @@ public class ExceptionHandlingMiddleware
 
         switch (exception)
         {
+            case ValidationException validationException:
+                statusCode = HttpStatusCode.BadRequest;
+                message = validationException.Message;
+                errors = validationException.Errors;
+                break;
+            case UnauthorizedAccessException:
+                statusCode = HttpStatusCode.Unauthorized;
+                message = exception.Message;
+                break;
             case DuplicateException:
                 statusCode = HttpStatusCode.Conflict;
                 message = exception.Message;

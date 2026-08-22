@@ -1,13 +1,22 @@
-using WarehouseFlow.Application.Dtos;
-using WarehouseFlow.Domain.Entities;
-
 namespace WarehouseFlow.Application.Interfaces;
+
+using WarehouseFlow.Application.Dtos;
+
 public interface IAuthenticationService
 {
-    Task<User?> GetUserByEmailAsync(string email);
-    Task<User?> GetUserByIdAsync(Guid id);
-    Task<IEnumerable<User>> GetAllUsersAsync();
-    Task<CreatedUserResponse> AddUserAsync(CreateUserDto user);
-    Task UpdateUserAsync(User user);
-    Task DeleteUserAsync(User user);
+	Task<LoginResponse> LoginAsync(
+		LoginRequest request,
+		CancellationToken cancellationToken = default
+	);
+
+	Task<CreatedUserResponse> RegisterCustomerAsync(
+		RegisterCustomerDto registration,
+		CancellationToken cancellationToken = default
+	);
+
+    Task<CreatedUserResponse> RegisterEmployeeAsync(
+		CreateEmployeeUserDto employeeUserDto,
+		string createdByUserId,
+		CancellationToken cancellationToken = default
+	);
 }

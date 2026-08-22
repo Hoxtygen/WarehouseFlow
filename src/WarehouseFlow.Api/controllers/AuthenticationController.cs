@@ -1,23 +1,81 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WarehouseFlow.Api.Contracts;
-using WarehouseFlow.Api.Controllers;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 
+namespace WarehouseFlow.Api.Controllers;
+
+[Route("api/v1/auth/[controller]")]
 public class AuthenticationController(IAuthenticationService authenticationService) : BaseController
 {
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login(
+        LoginRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await authenticationService.LoginAsync(request, cancellationToken);
+        return Success(result, "Login successful.");
+    }
+
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResponse<CreatedUserResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Register(CreateUserDto userDto)
+    public async Task<IActionResult> Register(
+        RegisterCustomerDto registration,
+        CancellationToken cancellationToken
+    )
     {
-        var result = await authenticationService.AddUserAsync(userDto);
+        var result = await authenticationService.RegisterCustomerAsync(
+            registration,
+            cancellationToken
+        );
+
         return Created(
             result,
             nameof(Register),
             new { id = result.Id },
-            "User registered successfully."
+            "Customer registered successfully."
+        );
+    }
+
+    [HttpPost("employee/register")]
+    [Authorize(Roles = "Super_Admin, Admin")]
+    [ProducesResponseType(typeof(ApiResponse<CreatedUserResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RegisterEmployee(
+        CreateEmployeeUserDto employeeUserDto,
+        CancellationToken cancellationToken
+    )
+    {
+        var createdByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(createdByUserId))
+        {
+            return Unauthorized(
+                ApiResponse<object>.FailureResult(
+                    "The authenticated user ID is missing from the access token.",
+                    statusCode: StatusCodes.Status401Unauthorized
+                )
+            );
+        }
+
+        var result = await authenticationService.RegisterEmployeeAsync(
+            employeeUserDto,
+            createdByUserId,
+            cancellationToken
+        );
+
+        return Created(
+            result,
+            nameof(RegisterEmployee),
+            new { id = result.Id },
+            "Employee created successfully"
         );
     }
 }

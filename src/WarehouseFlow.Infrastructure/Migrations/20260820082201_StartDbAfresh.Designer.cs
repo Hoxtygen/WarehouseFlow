@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WarehouseFlow.Infrastructure.Data;
@@ -11,9 +12,11 @@ using WarehouseFlow.Infrastructure.Data;
 namespace WarehouseFlow.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820082201_StartDbAfresh")]
+    partial class StartDbAfresh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,7 +38,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<DateTime?>("LastReservedAt")
                         .HasColumnType("timestamp with time zone");
@@ -49,7 +52,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<Guid>("WarehouseId")
                         .HasColumnType("uuid");
@@ -86,7 +89,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex");
 
-                    b.ToTable("roles", (string)null);
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -111,131 +114,10 @@ namespace WarehouseFlow.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("role_claims", (string)null);
+                    b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClaimType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ClaimValue")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("user_claims", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                {
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProviderKey")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("LoginProvider", "ProviderKey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("user_logins", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RoleId")
-                        .HasColumnType("text");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("user_roles", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text");
-
-                    b.HasKey("UserId", "LoginProvider", "Name");
-
-                    b.ToTable("user_tokens", (string)null);
-                });
-
-            modelBuilder.Entity("Warehouse", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("uuidv7()");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Capacity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("WarehouseCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("WarehouseName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WarehouseCode")
-                        .IsUnique();
-
-                    b.ToTable("warehouses", (string)null);
-                });
-
-            modelBuilder.Entity("WarehouseFlow.Application.Dtos.ApplicationUser", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -247,8 +129,10 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -256,14 +140,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -294,9 +170,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("UpdatedOn")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -310,10 +183,186 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.HasIndex("PhoneNumber")
+                    b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuidv7()");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SKU")
                         .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("products", (string)null);
+                });
+
+            modelBuilder.Entity("Warehouse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuidv7()");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<string>("WarehouseCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WarehouseName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseCode")
+                        .IsUnique();
+
+                    b.ToTable("warehouses", (string)null);
                 });
 
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Customer", b =>
@@ -326,10 +375,13 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<string>("ApplicationUserId")
                         .HasColumnType("text");
 
+                    b.Property<string>("ApplicationUserId1")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -354,11 +406,13 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationUserId")
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("ApplicationUserId1")
                         .IsUnique();
 
                     b.HasIndex("Email")
@@ -368,59 +422,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Customers", (string)null);
-                });
-
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.Employee", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("uuidv7()");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.Property<string>("ApplicationUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("CreatedByUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EmployeeNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId")
-                        .IsUnique();
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("EmployeeNumber")
-                        .IsUnique();
-
-                    b.ToTable("employees", (string)null);
                 });
 
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Order", b =>
@@ -433,7 +434,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
@@ -441,7 +442,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime>("OrderDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<string>("OrderStatus")
                         .IsRequired()
@@ -453,7 +454,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.HasKey("Id");
 
@@ -472,7 +473,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
@@ -489,7 +490,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.HasKey("Id");
 
@@ -498,101 +499,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("order_items", (string)null);
-                });
-
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.Product", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("uuidv7()");
-
-                    b.Property<string>("Brand")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("ProductCategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductCategoryId");
-
-                    b.HasIndex("SKU")
-                        .IsUnique();
-
-                    b.ToTable("products", (string)null);
-                });
-
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.ProductCategory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("uuidv7()");
-
-                    b.Property<string>("CategoryName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("CategorySlug")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryName");
-
-                    b.HasIndex("CategorySlug");
-
-                    b.ToTable("product_categories", (string)null);
                 });
 
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Reservation", b =>
@@ -605,7 +511,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
@@ -622,7 +528,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<Guid>("WarehouseId")
                         .HasColumnType("uuid");
@@ -638,9 +544,38 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.ToTable("reservations", (string)null);
                 });
 
+            modelBuilder.Entity("WarehouseFlow.Application.Dtos.ApplicationUser", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
             modelBuilder.Entity("Inventory", b =>
                 {
-                    b.HasOne("WarehouseFlow.Domain.Entities.Product", "Product")
+                    b.HasOne("Product", "Product")
                         .WithMany("Inventories")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -668,7 +603,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -677,7 +612,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -692,7 +627,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -701,7 +636,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -711,9 +646,12 @@ namespace WarehouseFlow.Infrastructure.Migrations
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
                         .WithOne("Customer")
-                        .HasForeignKey("WarehouseFlow.Domain.Entities.Customer", "ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("WarehouseFlow.Domain.Entities.Customer", "ApplicationUserId1");
 
                     b.OwnsOne("WarehouseFlow.Domain.ValueObjects.Address", "Address", b1 =>
                         {
@@ -758,21 +696,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.Employee", b =>
-                {
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
-                        .WithOne("Employee")
-                        .HasForeignKey("WarehouseFlow.Domain.Entities.Employee", "ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Order", b =>
                 {
                     b.HasOne("WarehouseFlow.Domain.Entities.Customer", "Customer")
@@ -792,7 +715,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WarehouseFlow.Domain.Entities.Product", "Product")
+                    b.HasOne("Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -803,17 +726,6 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.Product", b =>
-                {
-                    b.HasOne("WarehouseFlow.Domain.Entities.ProductCategory", "ProductCategory")
-                        .WithMany("Products")
-                        .HasForeignKey("ProductCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ProductCategory");
-                });
-
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Reservation", b =>
                 {
                     b.HasOne("WarehouseFlow.Domain.Entities.Order", "Order")
@@ -822,7 +734,7 @@ namespace WarehouseFlow.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WarehouseFlow.Domain.Entities.Product", "Product")
+                    b.HasOne("Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -841,16 +753,23 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("Warehouse", b =>
+            modelBuilder.Entity("WarehouseFlow.Application.Dtos.ApplicationUser", b =>
+                {
+                    b.HasOne("WarehouseFlow.Application.Dtos.ApplicationUser", "CreatedByUser")
+                        .WithMany("CreatedUsers")
+                        .HasForeignKey("CreatedByUserId");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("Product", b =>
                 {
                     b.Navigation("Inventories");
                 });
 
-            modelBuilder.Entity("WarehouseFlow.Application.Dtos.ApplicationUser", b =>
+            modelBuilder.Entity("Warehouse", b =>
                 {
-                    b.Navigation("Customer");
-
-                    b.Navigation("Employee");
+                    b.Navigation("Inventories");
                 });
 
             modelBuilder.Entity("WarehouseFlow.Domain.Entities.Customer", b =>
@@ -865,14 +784,11 @@ namespace WarehouseFlow.Infrastructure.Migrations
                     b.Navigation("Reservations");
                 });
 
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.Product", b =>
+            modelBuilder.Entity("WarehouseFlow.Application.Dtos.ApplicationUser", b =>
                 {
-                    b.Navigation("Inventories");
-                });
+                    b.Navigation("CreatedUsers");
 
-            modelBuilder.Entity("WarehouseFlow.Domain.Entities.ProductCategory", b =>
-                {
-                    b.Navigation("Products");
+                    b.Navigation("Customer");
                 });
 #pragma warning restore 612, 618
         }
