@@ -7,7 +7,7 @@ using WarehouseFlow.Application.Interfaces;
 
 namespace WarehouseFlow.Api.Controllers;
 
-[Route("api/v1/auth/[controller]")]
+[Route("api/v1/auth")]
 public class AuthenticationController(IAuthenticationService authenticationService) : BaseController
 {
     [HttpPost("login")]
@@ -44,7 +44,7 @@ public class AuthenticationController(IAuthenticationService authenticationServi
     }
 
     [HttpPost("employee/register")]
-    [Authorize(Roles = "Super_Admin, Admin")]
+    [Authorize(Roles = "Super_Admin")]
     [ProducesResponseType(typeof(ApiResponse<CreatedUserResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]

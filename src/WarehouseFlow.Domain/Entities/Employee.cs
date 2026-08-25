@@ -1,10 +1,12 @@
+using WarehouseFlow.Domain.Enum;
+
 namespace WarehouseFlow.Domain.Entities;
 
 public class Employee : BaseEntity
 {
     public string EmployeeNumber { get; private set; } = null!;
     public string Address { get; private set; } = null!;
-    public string Role { get; private set; } = null!;
+    public UserRole Role { get; private set; }
 
     public string ApplicationUserId { get; private set; } = null!;
     public string CreatedByUserId { get; private set; } = null!;
@@ -14,14 +16,14 @@ public class Employee : BaseEntity
     public Employee(
         string employeeNumber,
         string address,
-        string role,
+        UserRole role,
         string applicationUserId,
         string createdByUserId
     )
     {
         EmployeeNumber = RequireValue(employeeNumber, nameof(employeeNumber));
         Address = RequireValue(address, nameof(address));
-        Role = RequireValue(role, nameof(role));
+        Role = role;
         ApplicationUserId = RequireValue(applicationUserId, nameof(applicationUserId));
         CreatedByUserId = RequireValue(createdByUserId, nameof(createdByUserId));
     }

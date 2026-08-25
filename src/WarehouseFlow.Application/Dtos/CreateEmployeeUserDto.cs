@@ -9,7 +9,7 @@ public class CreateEmployeeUserDto : CreateUserDto
     public string EmployeeNumber { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "User role is required")]
-    public string Role { get; set; } = string.Empty;
+    public string RoleId { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Address is required")]
     public string Address { get; set; } = string.Empty;

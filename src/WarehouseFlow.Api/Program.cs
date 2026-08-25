@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -10,20 +11,22 @@ using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Api.Middleware;
 using WarehouseFlow.Application;
 using WarehouseFlow.Application.Dtos;
+using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Infrastructure;
-using WarehouseFlow.Infrastructure.Identity;
 using WarehouseFlow.Infrastructure.Data;
-
+using WarehouseFlow.Infrastructure.Identity;
+using WarehouseFlow.Infrastructure.Implementations;
+using WarehouseFlow.Domain.Enum;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
-
 
 // Register layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 builder
     .Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -59,14 +62,40 @@ builder
             .Json
             .JsonNamingPolicy
             .CamelCase;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     })
     .ConfigureApiBehaviorOptions(options =>
         options.InvalidModelStateResponseFactory = context =>
         {
+            var validEmployeeRoles = Enum
+                .GetNames<UserRole>()
+                .Where(role => role != nameof(UserRole.Customer));
+            var roleError =
+                $"Role must be one of: {string.Join(", ", validEmployeeRoles)}.";
+
             var errors = context
                 .ModelState.Where(kv => kv.Value?.Errors.Count > 0)
-                .SelectMany(kv => kv.Value!.Errors.Select(e => e.ErrorMessage))
+                .SelectMany(kv => kv.Value!.Errors.Select(error => new
+                {
+                    Key = kv.Key,
+                    Message = error.ErrorMessage,
+                    IsJsonError = error.Exception is JsonException
+                        || error.Exception?.InnerException is JsonException,
+                }))
+                .Where(error =>
+                    !(
+                        error.Key.Equals("employeeUserDto", StringComparison.OrdinalIgnoreCase)
+                        && error.Message.Contains("field is required", StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                .Select(error =>
+                    error.IsJsonError
+                    && error.Key.EndsWith("role", StringComparison.OrdinalIgnoreCase)
+                        ? roleError
+                        : error.Message
+                )
+                .Distinct()
                 .ToList();
 
             return new BadRequestObjectResult(
@@ -80,7 +109,8 @@ builder
     );
 
 // Add Jwt
-var jwtSecret = builder.Configuration["JwtSettings:Secret"]
+var jwtSecret =
+    builder.Configuration["JwtSettings:Secret"]
     ?? throw new InvalidOperationException("JwtSettings:Secret is not configured.");
 
 builder
@@ -130,9 +160,7 @@ builder
 
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSecret)
-            ),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         };
     });
 
@@ -152,12 +180,10 @@ builder.Services.AddSwaggerGen(options =>
         }
     );
 
-    options.AddSecurityRequirement(document =>
-        new OpenApiSecurityRequirement
-        {
-            [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>(),
-        }
-    );
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>(),
+    });
 });
 
 var app = builder.Build();
@@ -166,7 +192,6 @@ using (var scope = app.Services.CreateScope())
     await IdentitySeeder.SeedRolesAsync(scope.ServiceProvider);
     await IdentitySeeder.SeedSuperAdminAsync(scope.ServiceProvider, app.Configuration);
 }
-
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

@@ -18,7 +18,6 @@ public class NewProductDto
 
     [Required(ErrorMessage = "Product category is required")]
     public Guid ProductCategoryId { get; set; }
-    public string SKU { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Brand { get; set; } = "Generic";
     public string? ImageUrl { get; set; }

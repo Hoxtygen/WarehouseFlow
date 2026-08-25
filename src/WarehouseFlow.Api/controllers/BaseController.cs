@@ -4,7 +4,6 @@ using WarehouseFlow.Api.Contracts;
 namespace WarehouseFlow.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
 public abstract class BaseController : ControllerBase
 {
     protected IActionResult Success<T>(

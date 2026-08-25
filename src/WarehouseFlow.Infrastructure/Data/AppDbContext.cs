@@ -80,7 +80,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
             entity.HasIndex(e => e.EmployeeNumber).IsUnique();
             entity.Property(e => e.EmployeeNumber).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Address).IsRequired().HasMaxLength(250);
-            entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Role).HasConversion<string>().IsRequired().HasMaxLength(50);
             entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()");
@@ -148,6 +148,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnType("uuid").HasDefaultValueSql("uuidv7()");
+            entity.HasIndex(i => new
+            {
+                i.ProductId,
+                i.WarehouseId
+            }).IsUnique();
             entity.ToTable("inventories");
 
             entity.Property(e => e.AvailableQuantity).IsRequired();

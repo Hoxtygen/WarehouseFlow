@@ -1,0 +1,31 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WarehouseFlow.Api.Contracts;
+using WarehouseFlow.Api.Controllers;
+using WarehouseFlow.Application.Dtos.WarehouseFlow.Application.Dtos;
+using WarehouseFlow.Application.Interfaces;
+
+namespace InventoryController
+{
+    [Route("api/v1/inventory")]
+    public sealed class InventoryController(IInventoryService inventoryService) : BaseController
+    {
+        [HttpPost("addInventory")]
+        [Authorize(Roles = "Super_Admin, Admin, Warehouse_Manager")]
+        [ProducesResponseType(typeof(ApiResponse<Inventory>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateInventory(
+            InventoryDto request,
+            CancellationToken cancellationToken
+        )
+        {
+            var result = await inventoryService.CreateInventory(request, cancellationToken);
+            return Created(
+                result,
+                nameof(CreateInventory),
+                new { id = result.Id },
+                "New inventory added successfully."
+            );
+        }
+    }
+}

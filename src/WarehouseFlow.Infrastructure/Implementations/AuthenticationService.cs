@@ -13,6 +13,7 @@ namespace WarehouseFlow.Infrastructure.Implementations;
 
 public sealed class AuthenticationService(
     UserManager<ApplicationUser> userManager,
+    RoleManager<IdentityRole> roleManager,
     AppDbContext dbContext,
     ITokenService tokenService,
     ILogger<AuthenticationService> _logger
@@ -128,6 +129,7 @@ public sealed class AuthenticationService(
     )
     {
         await EnsurePhoneNumberIsAvailableAsync(employeeUserDto.PhoneNumber, cancellationToken);
+        var role = await ResolveEmployeeRoleAsync(employeeUserDto.RoleId);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
             cancellationToken
@@ -146,14 +148,14 @@ public sealed class AuthenticationService(
         _logger.LogInformation("User created succesfully: {Email}", employee.Email);
         EnsureUserCreationSucceeded(result);
 
-        var roleName = ValidateEmployeeRole(employeeUserDto.Role);
+        var roleName = role.ToString();
         var roleResult = await userManager.AddToRoleAsync(employee, roleName);
         EnsureRoleAssignmentSucceeded(roleResult, roleName);
 
         var newEmployee = new Employee(
             employeeUserDto.EmployeeNumber,
             employeeUserDto.Address,
-            roleName,
+            role,
             employee.Id,
             createdByUserId
         );
@@ -171,21 +173,31 @@ public sealed class AuthenticationService(
             PhoneNumber = employee.PhoneNumber!,
             CreatedAt = newEmployee.CreatedAt,
             UpdatedAt = newEmployee.UpdatedAt ?? newEmployee.CreatedAt,
-            role = Enum.Parse<UserRole>(roleName, true),
+            role = role,
         };
     }
 
-    private static string ValidateEmployeeRole(string role)
+    private async Task<UserRole> ResolveEmployeeRoleAsync(string roleId)
     {
-        if (
-            !Enum.TryParse<UserRole>(role, true, out var parsedRole)
-            || parsedRole == UserRole.Customer
-        )
+        if (string.IsNullOrWhiteSpace(roleId))
         {
-            throw new ArgumentException("A valid employee role is required.", nameof(role));
+            throw new ValidationException("A valid employee role is required.", ["RoleId is required."]);
         }
 
-        return parsedRole.ToString();
+        var identityRole = await roleManager.FindByIdAsync(roleId);
+        if (
+            identityRole?.Name is null
+            || !Enum.TryParse<UserRole>(identityRole.Name, true, out var role)
+            || role == UserRole.Customer
+        )
+        {
+            throw new ValidationException(
+                "A valid employee role is required.",
+                ["The selected role is not a valid employee role."]
+            );
+        }
+
+        return role;
     }
 
     private async Task EnsurePhoneNumberIsAvailableAsync(
