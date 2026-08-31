@@ -226,7 +226,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
             entity.Property(e => e.Id).HasColumnType("uuid").HasDefaultValueSql("uuidv7()");
             entity.ToTable("reservations");
 
-            entity.Property(e => e.ReservedQuantity).IsRequired();
             entity
                 .Property(e => e.ExpiresAt)
                 .IsRequired()

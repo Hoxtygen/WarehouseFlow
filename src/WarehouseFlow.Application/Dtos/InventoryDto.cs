@@ -2,10 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WarehouseFlow.Application.Dtos
 {
- using System.ComponentModel.DataAnnotations;
-
-namespace WarehouseFlow.Application.Dtos
-{
     public record InventoryDto(
         Guid ProductId,
 
@@ -25,6 +21,4 @@ namespace WarehouseFlow.Application.Dtos
 
         Guid WarehouseId
     );
-}
-
 }

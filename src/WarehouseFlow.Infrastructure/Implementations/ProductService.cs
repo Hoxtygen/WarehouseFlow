@@ -1,10 +1,10 @@
-
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Entities;
+using WarehouseFlow.Domain.Exceptions;
 using WarehouseFlow.Infrastructure.Data;
 
 namespace WarehouseFlow.Infrastructure.Implementations;
@@ -21,8 +21,8 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
         CancellationToken cancellationToken = default
     )
     {
-        var categoryName = await dbContext.ProductCategories
-            .Where(category => category.Id == newProductDto.ProductCategoryId)
+        var categoryName = await dbContext
+            .ProductCategories.Where(category => category.Id == newProductDto.ProductCategoryId)
             .Select(category => category.CategoryName)
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -33,11 +33,7 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
 
         for (var attempt = 0; attempt < MaxSkuAttempts; attempt++)
         {
-            var sku = GenerateSku(
-                newProductDto.Brand,
-                categoryName,
-                newProductDto.ProductName
-            );
+            var sku = GenerateSku(newProductDto.Brand, categoryName, newProductDto.ProductName);
             var skuExists = await dbContext.Products.AnyAsync(
                 product => product.SKU == sku,
                 cancellationToken
@@ -95,4 +91,23 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
             ? alphanumeric[..3].ToUpperInvariant()
             : alphanumeric.ToUpperInvariant().PadRight(3, 'X');
     }
+
+    public async Task<Product> GetProductAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        var product = await dbContext
+            .Products.AsNoTracking()
+            .FirstOrDefaultAsync(product => product.Id == productId);
+        if (product is null)
+        {
+            logger.LogError($"Prouct wth ID {productId} not found");
+            throw new NotFoundException($"Prouct wth ID {productId} not found");
+        }
+
+        return product;
+    }
+
+      public async Task<bool> ProductExists(Guid productId, CancellationToken cancellationToken)
+        {
+            return await dbContext.Products.AnyAsync(p => p.Id == productId, cancellationToken);
+        }
 }

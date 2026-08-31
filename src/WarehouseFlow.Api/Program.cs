@@ -16,9 +16,13 @@ using WarehouseFlow.Infrastructure;
 using WarehouseFlow.Infrastructure.Data;
 using WarehouseFlow.Infrastructure.Identity;
 using WarehouseFlow.Infrastructure.Implementations;
+using WarehouseFlow.Infrastructure.BackgroundServices;
 using WarehouseFlow.Domain.Enum;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add command-line args to configuration so IdentitySeeder can access them
+builder.Configuration.AddCommandLine(args);
 
 // Register layers
 builder.Services.AddApplication();
@@ -27,6 +31,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+builder.Services.AddHostedService<ReservationCleanupService>();
 
 builder
     .Services.AddIdentity<ApplicationUser, IdentityRole>()

@@ -1,0 +1,50 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run API (HTTP)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/WarehouseFlow.Api/bin/Debug/net10.0/WarehouseFlow.Api.dll",
+            "args": ["--super-admin-password=411!$F10p$"],
+            "cwd": "${workspaceFolder}/src/WarehouseFlow.Api",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "{0}"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "IdentitySeed__SuperAdminPassword": "411!$F10p$"
+            }
+        },
+        {
+            "name": "Run API (HTTPS)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/WarehouseFlow.Api/bin/Debug/net10.0/WarehouseFlow.Api.dll",
+            "args": ["--super-admin-password=411!$F10p$"],
+            "cwd": "${workspaceFolder}/src/WarehouseFlow.Api",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "{0}"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:7257;http://localhost:5089",
+                "IdentitySeed__SuperAdminPassword": "411!$F10p$"
+            }
+        },
+        {
+            "name": "Attach to API",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}

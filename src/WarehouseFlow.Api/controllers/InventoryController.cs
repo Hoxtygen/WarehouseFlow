@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Api.Controllers;
-using WarehouseFlow.Application.Dtos.WarehouseFlow.Application.Dtos;
+using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 
 namespace InventoryController

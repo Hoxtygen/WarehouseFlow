@@ -1,28 +1,29 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using WarehouseFlow.Application.Dtos.WarehouseFlow.Application.Dtos;
+using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Exceptions;
 using WarehouseFlow.Infrastructure.Data;
 
 namespace WarehouseFlow.Infrastructure.Implementations
 {
-    public sealed class InventoryService(AppDbContext dbContext, ILogger<InventoryService> logger)
-        : IInventoryService
+    public sealed class InventoryService(
+        AppDbContext dbContext,
+        IWarehouseService warehouseService,
+        IProductService productService,
+        ILogger<InventoryService> logger
+    ) : IInventoryService
     {
         public async Task<Inventory> CreateInventory(
             InventoryDto inventoryDto,
             CancellationToken cancellationToken = default
         )
         {
-            if (
-                inventoryDto.AvailableQuantity < 0
-                || inventoryDto.ReservedQuantity < 0
-            )
+            if (inventoryDto.AvailableQuantity <= 0 || inventoryDto.ReservedQuantity <= 0)
             {
                 throw new ValidationException(
                     "Inventory quantities cannot be negative.",
-                    ["Available and reserved quantities must be zero or greater."]
+                    ["Available and reserved quantities must be greater than 0."]
                 );
             }
 
@@ -34,12 +35,14 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 );
             }
 
-            if (!await ProductExists(inventoryDto.ProductId, cancellationToken))
+            if (!await productService.ProductExists(inventoryDto.ProductId, cancellationToken))
             {
                 throw new InvalidDataException("Product does not exist");
             }
 
-            if (!await WarehouseExists(inventoryDto.WarehouseId, cancellationToken))
+            if (
+                !await warehouseService.WarehouseExists(inventoryDto.WarehouseId, cancellationToken)
+            )
             {
                 throw new InvalidDataException("Warehouse does not exist");
             }
@@ -57,27 +60,31 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 );
             }
 
-            var warehouseCapacity = await dbContext.Warehouses
-                .Where(warehouse => warehouse.Id == inventoryDto.WarehouseId)
+            var warehouseCapacity = await dbContext
+                .Warehouses.Where(warehouse => warehouse.Id == inventoryDto.WarehouseId)
                 .Select(warehouse => warehouse.Capacity)
                 .SingleAsync(cancellationToken);
 
-            var occupiedCapacity = await dbContext.Inventories
-                .Where(inventory => inventory.WarehouseId == inventoryDto.WarehouseId)
-                .SumAsync(
-                    inventory => inventory.AvailableQuantity + inventory.ReservedQuantity,
-                    cancellationToken
-                );
+            var occupiedCapacity =
+                await dbContext
+                    .Inventories.Where(inventory =>
+                        inventory.WarehouseId == inventoryDto.WarehouseId
+                    )
+                    .SumAsync(
+                        inventory =>
+                            (int?)(inventory.AvailableQuantity + inventory.ReservedQuantity),
+                        cancellationToken
+                    )
+                ?? 0;
 
-            var requestedCapacity =
-                inventoryDto.AvailableQuantity + inventoryDto.ReservedQuantity;
+            var requestedCapacity = inventoryDto.AvailableQuantity + inventoryDto.ReservedQuantity;
 
             if (occupiedCapacity + requestedCapacity > warehouseCapacity)
             {
                 throw new ValidationException(
                     "Warehouse capacity exceeded.",
                     [
-                        $"The warehouse has {warehouseCapacity - occupiedCapacity} remaining capacity."
+                        $"The warehouse has {warehouseCapacity - occupiedCapacity} remaining capacity.",
                     ]
                 );
             }
@@ -101,17 +108,70 @@ namespace WarehouseFlow.Infrastructure.Implementations
             return inventory;
         }
 
-        private async Task<bool> ProductExists(Guid productId, CancellationToken cancellationToken)
-        {
-            return await dbContext.Products.AnyAsync(p => p.Id == productId, cancellationToken);
-        }
-
-        private async Task<bool> WarehouseExists(
-            Guid warehouseId,
-            CancellationToken cancellationToken
+        public async Task<IList<InventoryReservationDto>> ReserveInventoryAsync(
+            Guid productId,
+            int quantity,
+            CancellationToken cancellationToken = default
         )
         {
-            return await dbContext.Warehouses.AnyAsync(w => w.Id == warehouseId, cancellationToken);
+            var inventories = await dbContext
+                .Inventories.FromSqlInterpolated(
+                    $"SELECT * FROM inventories WHERE \"ProductId\" = {productId} ORDER BY \"Id\" FOR UPDATE"
+                )
+                .ToListAsync(cancellationToken);
+
+            var totalAvailable = inventories.Sum(inventory => inventory.AvailableQuantity);
+
+            if (totalAvailable < quantity)
+            {
+                logger.LogError(
+                    "Insufficient stock for Product {ProductId}. Available: {Available}, Requested: {Requested}",
+                    productId,
+                    totalAvailable,
+                    quantity
+                );
+                throw new InsufficientStockException(
+                    $"Insufficient stock for Product {productId}. Available: {totalAvailable}, Requested: {quantity}"
+                );
+            }
+
+            var reservations = new List<InventoryReservationDto>();
+            var remainingProductQuantityToReserve = quantity;
+
+            foreach (
+                var inventory in inventories.Where(inventory => inventory.AvailableQuantity > 0)
+            )
+            {
+                if (remainingProductQuantityToReserve <= 0)
+                {
+                    break;
+                }
+
+                var productQuantityToReserve = Math.Min(
+                    inventory.AvailableQuantity,
+                    remainingProductQuantityToReserve
+                );
+                inventory.AvailableQuantity -= productQuantityToReserve;
+                inventory.ReservedQuantity += productQuantityToReserve;
+                inventory.LastReservedAt = DateTime.UtcNow;
+                remainingProductQuantityToReserve -= productQuantityToReserve;
+
+                reservations.Add(
+                    new InventoryReservationDto(inventory.WarehouseId, productQuantityToReserve)
+                );
+                logger.LogInformation("Reservation has been made : {reservations}", reservations);
+            }
+            
+            //registers the inventory changes to the current transaction context
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation(
+                "Reserved {Quantity} units of Product {ProductId} from {WarehouseCount} warehouse(s)",
+                quantity,
+                productId,
+                reservations.Count
+            );
+
+            return reservations;
         }
 
         private async Task<bool> InventoryExists(

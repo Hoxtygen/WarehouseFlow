@@ -61,6 +61,16 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.Conflict;
                 message = exception.Message;
                 break;
+
+            case NotFoundException:
+                statusCode = HttpStatusCode.NotFound;
+                message = exception.Message;
+                break;
+
+            case InsufficientStockException:
+                statusCode = HttpStatusCode.BadRequest;
+                message = exception.Message;
+                break;
         }
 
         var response = ApiResponse<object>.FailureResult(message, errors, (int)statusCode);

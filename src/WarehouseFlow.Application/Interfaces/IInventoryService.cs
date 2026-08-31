@@ -1,4 +1,4 @@
-using WarehouseFlow.Application.Dtos.WarehouseFlow.Application.Dtos;
+using WarehouseFlow.Application.Dtos;
 
 namespace WarehouseFlow.Application.Interfaces
 {
@@ -6,6 +6,12 @@ namespace WarehouseFlow.Application.Interfaces
     {
         Task<Inventory> CreateInventory(
             InventoryDto inventoryDto,
+            CancellationToken cancellationToken = default
+        );
+
+        Task<IList<InventoryReservationDto>> ReserveInventoryAsync(
+            Guid productId,
+            int quantity,
             CancellationToken cancellationToken = default
         );
     }

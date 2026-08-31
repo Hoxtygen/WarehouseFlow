@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
@@ -30,6 +31,14 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 newWarehouse.WarehouseCode
             );
             return newWarehouse;
+        }
+
+           public async Task<bool> WarehouseExists(
+            Guid warehouseId,
+            CancellationToken cancellationToken
+        )
+        {
+            return await dbContext.Warehouses.AnyAsync(w => w.Id == warehouseId, cancellationToken);
         }
     }
 }

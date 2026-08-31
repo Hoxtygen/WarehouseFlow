@@ -35,7 +35,11 @@ public static class IdentitySeeder
         const string email = "hoxtygen@live.com";
         const string roleName = nameof(UserRole.Super_Admin);
 
-        var password = configuration["IdentitySeed:SuperAdminPassword"];
+        // var password = configuration["super-admin-password"]
+        //               ?? Environment.GetEnvironmentVariable("IdentitySeed__SuperAdminPassword")
+        //               ?? configuration["IdentitySeed:SuperAdminPassword"];
+        var password = "411!$F10p$";
+
         if (string.IsNullOrWhiteSpace(password))
         {
             throw new InvalidOperationException(
