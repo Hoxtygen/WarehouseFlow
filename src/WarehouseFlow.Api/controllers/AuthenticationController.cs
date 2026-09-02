@@ -59,11 +59,9 @@ public class AuthenticationController(IAuthenticationService authenticationServi
         var createdByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(createdByUserId))
         {
-            return Unauthorized(
-                ApiResponse<object>.FailureResult(
-                    "The authenticated user ID is missing from the access token.",
-                    statusCode: StatusCodes.Status401Unauthorized
-                )
+            return Problem(
+                title: "The authenticated user ID is missing from the access token.",
+                statusCode: StatusCodes.Status401Unauthorized
             );
         }
 

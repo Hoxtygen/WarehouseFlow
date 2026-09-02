@@ -25,11 +25,9 @@ public class OrderController(IOrderService orderService) : BaseController
         var applicationUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(applicationUserId))
         {
-            return Unauthorized(
-                ApiResponse<object>.FailureResult(
-                    "The authenticated user ID is missing from the access token.",
-                    statusCode: StatusCodes.Status401Unauthorized
-                )
+            return Problem(
+                title: "The authenticated user ID is missing from the access token.",
+                statusCode: StatusCodes.Status401Unauthorized
             );
         }
 

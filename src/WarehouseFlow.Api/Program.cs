@@ -14,12 +14,12 @@ using WarehouseFlow.Api.Middleware;
 using WarehouseFlow.Application;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
+using WarehouseFlow.Domain.Enum;
 using WarehouseFlow.Infrastructure;
+using WarehouseFlow.Infrastructure.BackgroundServices;
 using WarehouseFlow.Infrastructure.Data;
 using WarehouseFlow.Infrastructure.Identity;
 using WarehouseFlow.Infrastructure.Implementations;
-using WarehouseFlow.Infrastructure.BackgroundServices;
-using WarehouseFlow.Domain.Enum;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,22 +44,24 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, cancellationToken) =>
     {
-        context.HttpContext.Response.ContentType = "application/json";
+        context.HttpContext.Response.ContentType = "application/problem+json";
 
-        var response = ApiResponse<object>.FailureResult(
-            "Too many requests. Please slow down and try again later.",
-            statusCode: StatusCodes.Status429TooManyRequests
-        );
+        var problemDetails = new ProblemDetails
+        {
+            Status = StatusCodes.Status429TooManyRequests,
+            Title = "Too many requests. Please slow down and try again later.",
+            Type = "https://httpstatuses.com/429",
+        };
 
         await context.HttpContext.Response.WriteAsJsonAsync(
-            response,
+            problemDetails,
             cancellationToken: cancellationToken
         );
     };
 
     // Global baseline: every request, partitioned per IP (100 req/min)
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
-        httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
@@ -67,34 +69,42 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = 100,
                 Window = TimeSpan.FromMinutes(1),
             }
-        ));
+        )
+    );
 
     // Auth endpoints: stricter, per IP to prevent credential stuffing (5 req/min)
-    options.AddPolicy("auth", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                AutoReplenishment = true,
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(1),
-            }
-        ));
+    options.AddPolicy(
+        "auth",
+        httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                }
+            )
+    );
 
     // Order placement: per authenticated user to prevent bots mass-ordering (10 req/min)
-    options.AddPolicy("orders", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
-                ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                    ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
-                : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                AutoReplenishment = true,
-                PermitLimit = 10,
-                Window = TimeSpan.FromMinutes(1),
-            }
-        ));
+    options.AddPolicy(
+        "orders",
+        httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                    ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                        ?? "unknown"
+                    : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                }
+            )
+    );
 });
 
 builder
@@ -103,6 +113,9 @@ builder
     .AddDefaultTokenProviders();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // Add logging
 builder.Logging.ClearProviders();
@@ -126,10 +139,8 @@ builder
     .Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System
-            .Text
-            .Json
-            .JsonNamingPolicy
+        options.JsonSerializerOptions.PropertyNamingPolicy =
+            JsonNamingPolicy
             .CamelCase;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
@@ -137,43 +148,45 @@ builder
     .ConfigureApiBehaviorOptions(options =>
         options.InvalidModelStateResponseFactory = context =>
         {
-            var validEmployeeRoles = Enum
-                .GetNames<UserRole>()
+            var validEmployeeRoles = Enum.GetNames<UserRole>()
                 .Where(role => role != nameof(UserRole.Customer));
-            var roleError =
-                $"Role must be one of: {string.Join(", ", validEmployeeRoles)}.";
+            var roleError = $"Role must be one of: {string.Join(", ", validEmployeeRoles)}.";
 
-            var errors = context
-                .ModelState.Where(kv => kv.Value?.Errors.Count > 0)
-                .SelectMany(kv => kv.Value!.Errors.Select(error => new
+            var errors = new Dictionary<string, string[]>();
+
+            foreach (var stateEntry in context.ModelState.Where(entry => entry.Value?.Errors.Count > 0))
+            {
+                var errorMessages = stateEntry
+                    .Value!.Errors.Select(error =>
+                    {
+                        var isRoleJsonError =
+                            error.Exception is JsonException
+                            || error.Exception?.InnerException is JsonException;
+
+                        return isRoleJsonError
+                            && stateEntry.Key.EndsWith(
+                                "role",
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                            ? roleError
+                            : error.ErrorMessage;
+                    })
+                    .Where(message => !string.IsNullOrWhiteSpace(message))
+                    .ToArray();
+
+                if (errorMessages.Length > 0)
                 {
-                    Key = kv.Key,
-                    Message = error.ErrorMessage,
-                    IsJsonError = error.Exception is JsonException
-                        || error.Exception?.InnerException is JsonException,
-                }))
-                .Where(error =>
-                    !(
-                        error.Key.Equals("employeeUserDto", StringComparison.OrdinalIgnoreCase)
-                        && error.Message.Contains("field is required", StringComparison.OrdinalIgnoreCase)
-                    )
-                )
-                .Select(error =>
-                    error.IsJsonError
-                    && error.Key.EndsWith("role", StringComparison.OrdinalIgnoreCase)
-                        ? roleError
-                        : error.Message
-                )
-                .Distinct()
-                .ToList();
+                    errors[stateEntry.Key] = errorMessages;
+                }
+            }
 
-            return new BadRequestObjectResult(
-                ApiResponse<object>.FailureResult(
-                    "One or more validation errors occurred.",
-                    errors,
-                    StatusCodes.Status400BadRequest
-                )
-            );
+            var problemDetails = new ValidationProblemDetails(errors)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "One or more validation errors occurred.",
+            };
+
+            return new BadRequestObjectResult(problemDetails);
         }
     );
 
@@ -197,26 +210,30 @@ builder
             {
                 context.HandleResponse();
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/json";
+                context.Response.ContentType = "application/problem+json";
 
-                var response = ApiResponse<object>.FailureResult(
-                    "Authentication is required. Provide a valid bearer token.",
-                    statusCode: StatusCodes.Status401Unauthorized
-                );
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Authentication is required. Provide a valid bearer token.",
+                    Type = "https://httpstatuses.com/401",
+                };
 
-                return context.Response.WriteAsJsonAsync(response);
+                return context.Response.WriteAsJsonAsync(problemDetails);
             },
             OnForbidden = context =>
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                context.Response.ContentType = "application/json";
+                context.Response.ContentType = "application/problem+json";
 
-                var response = ApiResponse<object>.FailureResult(
-                    "You do not have permission to perform this action.",
-                    statusCode: StatusCodes.Status403Forbidden
-                );
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "You do not have permission to perform this action.",
+                    Type = "https://httpstatuses.com/403",
+                };
 
-                return context.Response.WriteAsJsonAsync(response);
+                return context.Response.WriteAsJsonAsync(problemDetails);
             },
         };
 
@@ -262,9 +279,8 @@ using (var scope = app.Services.CreateScope())
     await IdentitySeeder.SeedSuperAdminAsync(scope.ServiceProvider, app.Configuration);
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

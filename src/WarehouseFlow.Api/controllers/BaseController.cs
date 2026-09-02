@@ -26,15 +26,4 @@ public abstract class BaseController : ControllerBase
         return CreatedAtAction(actionName, routeValues, response);
     }
 
-    protected IActionResult Failure(
-        string message,
-        int statusCode,
-        IEnumerable<string>? errors = null
-    )
-    {
-        return StatusCode(
-            statusCode,
-            ApiResponse<object>.FailureResult(message, errors, statusCode)
-        );
-    }
 }
