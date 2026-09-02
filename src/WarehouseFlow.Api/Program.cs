@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +38,64 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 builder.Services.AddHostedService<ReservationCleanupService>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+
+        var response = ApiResponse<object>.FailureResult(
+            "Too many requests. Please slow down and try again later.",
+            statusCode: StatusCodes.Status429TooManyRequests
+        );
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            response,
+            cancellationToken: cancellationToken
+        );
+    };
+
+    // Global baseline: every request, partitioned per IP (100 req/min)
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+        httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+            }
+        ));
+
+    // Auth endpoints: stricter, per IP to prevent credential stuffing (5 req/min)
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+            }
+        ));
+
+    // Order placement: per authenticated user to prevent bots mass-ordering (10 req/min)
+    options.AddPolicy("orders", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.IsAuthenticated == true
+                ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"
+                : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+            }
+        ));
+});
 
 builder
     .Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -213,6 +273,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 

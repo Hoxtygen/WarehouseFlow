@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WarehouseFlow.Api.Controllers;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
@@ -11,6 +12,7 @@ namespace WarehouseFlow.Api.Contracts;
 public sealed class PaymentController(IPaymentService paymentService) : BaseController
 {
     [HttpPost("processPayment")]
+    [EnableRateLimiting("orders")]
     [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(ApiResponse<PaymentResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

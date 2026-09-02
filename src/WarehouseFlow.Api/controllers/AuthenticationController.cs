@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
@@ -8,13 +9,14 @@ using WarehouseFlow.Application.Interfaces;
 namespace WarehouseFlow.Api.Controllers;
 
 [Route("api/v1/auth")]
+[EnableRateLimiting("auth")]
 public class AuthenticationController(IAuthenticationService authenticationService) : BaseController
 {
     [HttpPost("login")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
-        LoginRequest request,
+       [FromBody] LoginRequest request,
         CancellationToken cancellationToken
     )
     {
@@ -26,7 +28,7 @@ public class AuthenticationController(IAuthenticationService authenticationServi
     [ProducesResponseType(typeof(ApiResponse<CreatedUserResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(
-        RegisterCustomerDto registration,
+       [FromBody] RegisterCustomerDto registration,
         CancellationToken cancellationToken
     )
     {
@@ -50,7 +52,7 @@ public class AuthenticationController(IAuthenticationService authenticationServi
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RegisterEmployee(
-        CreateEmployeeUserDto employeeUserDto,
+      [FromBody]  CreateEmployeeUserDto employeeUserDto,
         CancellationToken cancellationToken
     )
     {

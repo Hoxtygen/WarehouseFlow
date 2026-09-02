@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
@@ -11,6 +12,7 @@ namespace WarehouseFlow.Api.Controllers;
 public class OrderController(IOrderService orderService) : BaseController
 {
     [HttpPost]
+    [EnableRateLimiting("orders")]
     [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(ApiResponse<OrderResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
