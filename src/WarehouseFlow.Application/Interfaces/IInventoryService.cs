@@ -14,5 +14,13 @@ namespace WarehouseFlow.Application.Interfaces
             int quantity,
             CancellationToken cancellationToken = default
         );
+
+        Task<Inventory> GetInventoryByIdAsync(Guid inventoryId, CancellationToken cancellationToken = default);
+
+        Task<Inventory> GetInventoryByProductAndWarehouseAsync(
+            Guid productId,
+            Guid warehouseId,
+            CancellationToken cancellationToken = default
+        );
     }
 }

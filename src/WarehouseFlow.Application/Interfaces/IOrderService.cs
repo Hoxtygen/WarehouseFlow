@@ -12,5 +12,7 @@ namespace WarehouseFlow.Application.Interfaces
         );
 
         Task ExpireReservationsAsync(CancellationToken cancellationToken = default);
+        Task<Order> GetOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+        Task MarkOrderAsPaidAsync(Guid orderId, CancellationToken cancellationToken = default);
     }
 }

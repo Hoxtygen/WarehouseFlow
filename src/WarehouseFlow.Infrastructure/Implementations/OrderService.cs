@@ -4,6 +4,7 @@ using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Entities;
 using WarehouseFlow.Domain.Enum;
+using WarehouseFlow.Domain.Exceptions;
 using WarehouseFlow.Infrastructure.Data;
 
 namespace WarehouseFlow.Infrastructure.Implementations
@@ -140,7 +141,6 @@ namespace WarehouseFlow.Infrastructure.Implementations
                     });
 
                     foreach (var group in reservationGroups)
-                    
                     {
                         var totalToRelease = group.Sum(reservation => reservation.ReservedQuantity);
 
@@ -192,6 +192,45 @@ namespace WarehouseFlow.Infrastructure.Implementations
                     await transaction.RollbackAsync(cancellationToken);
                     throw;
                 }
+            }
+        }
+
+        public async Task<Order> GetOrderByIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var order = await dbContext
+                .Orders.AsNoTracking()
+                .Include(order => order.OrderItems)
+                .Include(order => order.Reservations)
+                .FirstOrDefaultAsync(order => order.Id == orderId, cancellationToken);
+
+            if (order == null)
+            {
+                logger.LogError("Order with ID {OrderId} not found", orderId);
+                throw new NotFoundException("Order not found");
+            }
+            return order;
+        }
+
+        public async Task MarkOrderAsPaidAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var affectedRows = await dbContext
+                .Orders.Where(order => order.Id == orderId)
+                .ExecuteUpdateAsync(
+                    setters =>
+                        setters.SetProperty(order => order.OrderStatus, OrderStatus.Paid),
+                    cancellationToken
+                );
+
+            if (affectedRows == 0)
+            {
+                logger.LogError("Order with ID {OrderId} not found", orderId);
+                throw new NotFoundException("Order not found");
             }
         }
     }

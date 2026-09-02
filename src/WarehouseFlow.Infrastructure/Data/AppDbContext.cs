@@ -20,6 +20,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -247,6 +248,30 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
                 .HasOne(r => r.Warehouse)
                 .WithMany()
                 .HasForeignKey(r => r.WarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()");
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnType("uuid").HasDefaultValueSql("uuidv7()");
+            entity.ToTable("payments");
+
+            entity.Property(e => e.Amount).IsRequired();
+
+            entity
+                .HasOne<Order>()
+                .WithMany()
+                .HasForeignKey(payment => payment.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne<Customer>()
+                .WithMany()
+                .HasForeignKey(payment => payment.CustomerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()");

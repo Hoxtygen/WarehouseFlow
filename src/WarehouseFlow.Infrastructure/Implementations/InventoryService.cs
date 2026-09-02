@@ -108,6 +108,49 @@ namespace WarehouseFlow.Infrastructure.Implementations
             return inventory;
         }
 
+        public async Task<Inventory> GetInventoryByIdAsync(
+            Guid inventoryId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var inventory = await dbContext
+                .Inventories.AsNoTracking()
+                .FirstOrDefaultAsync(inventory => inventory.Id == inventoryId, cancellationToken);
+            if (inventory is null)
+            {
+                throw new NotFoundException("Inventory not found");
+            }
+            return inventory;
+        }
+
+        public async Task<Inventory> GetInventoryByProductAndWarehouseAsync(
+            Guid productId,
+            Guid warehouseId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var inventory = await dbContext
+                .Inventories.FirstOrDefaultAsync(
+                    inventory =>
+                        inventory.ProductId == productId && inventory.WarehouseId == warehouseId,
+                    cancellationToken
+                );
+
+            if (inventory is null)
+            {
+                logger.LogError(
+                    "Inventory not found for Product {ProductId} in Warehouse {WarehouseId}",
+                    productId,
+                    warehouseId
+                );
+                throw new NotFoundException(
+                    $"Inventory not found for Product {productId} in Warehouse {warehouseId}"
+                );
+            }
+
+            return inventory;
+        }
+
         public async Task<IList<InventoryReservationDto>> ReserveInventoryAsync(
             Guid productId,
             int quantity,
@@ -161,7 +204,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 );
                 logger.LogInformation("Reservation has been made : {reservations}", reservations);
             }
-            
+
             //registers the inventory changes to the current transaction context
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation(
