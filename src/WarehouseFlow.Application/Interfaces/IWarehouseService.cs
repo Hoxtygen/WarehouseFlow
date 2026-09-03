@@ -4,7 +4,7 @@ namespace WarehouseFlow.Application.Interfaces;
 
 public interface IWarehouseService
 {
-    Task<Warehouse> CreateWarehouse(
+    Task<WarehouseResponse> CreateWarehouse(
         NewWarehouseDto newWarehouseDto,
         CancellationToken cancellationToken = default
     );

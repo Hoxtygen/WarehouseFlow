@@ -10,7 +10,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
     public class WarehouseService(AppDbContext dbContext, ILogger<WarehouseService> _logger)
         : IWarehouseService
     {
-        public async Task<Warehouse> CreateWarehouse(
+        public async Task<WarehouseResponse> CreateWarehouse(
             NewWarehouseDto newWarehouseDto,
             CancellationToken cancellationToken
         )
@@ -23,14 +23,14 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 WarehouseCode = WarehouseCodeGenerator.Generate(newWarehouseDto.Location),
             };
 
-            await dbContext.AddAsync(newWarehouse);
+            dbContext.Warehouses.Add(newWarehouse);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation(
                 "Warehouse {WarehouseName} with code {WarehouseCode} created successfully",
                 newWarehouse.WarehouseName,
                 newWarehouse.WarehouseCode
             );
-            return newWarehouse;
+            return WarehouseResponseFactory.FromWarehouse(newWarehouse);
         }
 
            public async Task<bool> WarehouseExists(

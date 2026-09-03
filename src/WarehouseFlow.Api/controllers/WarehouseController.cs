@@ -6,12 +6,12 @@ using WarehouseFlow.Application.Interfaces;
 
 namespace WarehouseFlow.Api.Controllers;
 
-[Route("api/v1/warehouse")]
+[Route("api/v1/warehouses")]
 public class WarehouseController(IWarehouseService warehouseService) : BaseController
 {
-    [HttpPost("createWarehouse")]
+    [HttpPost]
      [Authorize(Roles = "Super_Admin, Admin")]
-    [ProducesResponseType(typeof(ApiResponse<Warehouse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<WarehouseResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateWareHouse(
         NewWarehouseDto request,

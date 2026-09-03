@@ -5,7 +5,7 @@ namespace WarehouseFlow.Application.Interfaces;
 
 public interface IProductService
 {
-    Task<Product> createProduct(
+    Task<ProductResponse> createProduct(
         NewProductDto newProductDto,
         CancellationToken cancellationToken = default
     );

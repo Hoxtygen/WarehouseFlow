@@ -4,7 +4,7 @@ namespace WarehouseFlow.Application.Interfaces
 {
     public interface IInventoryService
     {
-        Task<Inventory> CreateInventory(
+        Task<InventoryResponse> CreateInventory(
             InventoryDto inventoryDto,
             CancellationToken cancellationToken = default
         );

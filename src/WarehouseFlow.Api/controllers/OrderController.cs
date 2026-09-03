@@ -32,9 +32,8 @@ public class OrderController(IOrderService orderService) : BaseController
         }
 
         var order = await orderService.CreateOrder(request, applicationUserId, cancellationToken);
-        var response = OrderResponseFactory.FromOrder(order);
         return Created(
-            response,
+            order,
             nameof(CreateOrder),
             new { id = order.Id },
             "Order created successfully"

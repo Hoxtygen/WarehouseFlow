@@ -10,11 +10,11 @@ namespace WarehouseFlow.Infrastructure.Implementations;
 public sealed class CustomerService(AppDbContext dbContext, ILogger<CustomerService> logger)
     : ICustomerService
 {
-    public async Task<Customer> GetCustomerAsync(Guid customerId)
+    public async Task<Customer> GetCustomerAsync(Guid customerId, CancellationToken cancellationToken)
     {
         var customer = await dbContext
             .Customers.AsNoTracking()
-            .FirstOrDefaultAsync(existingCustomer => existingCustomer.Id == customerId);
+            .FirstOrDefaultAsync(existingCustomer => existingCustomer.Id == customerId, cancellationToken);
 
         if (customer is null)
         {
@@ -25,11 +25,11 @@ public sealed class CustomerService(AppDbContext dbContext, ILogger<CustomerServ
         return customer;
     }
 
-    public async Task<Customer> GetCustomerByApplicationUserIdAsync(string applicationUserId)
+    public async Task<Customer> GetCustomerByApplicationUserIdAsync(string applicationUserId, CancellationToken cancellationToken)
     {
         var customer = await dbContext
             .Customers.AsNoTracking()
-            .FirstOrDefaultAsync(existingCustomer => existingCustomer.ApplicationUserId == applicationUserId);
+            .FirstOrDefaultAsync(existingCustomer => existingCustomer.ApplicationUserId == applicationUserId, cancellationToken);
 
         if (customer is null)
         {

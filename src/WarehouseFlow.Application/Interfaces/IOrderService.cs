@@ -5,7 +5,7 @@ namespace WarehouseFlow.Application.Interfaces
 {
     public interface IOrderService
     {
-        Task<Order> CreateOrder(
+        Task<OrderResponse> CreateOrder(
             OrderDto orderDto,
             string applicationUserId,
             CancellationToken cancellationToken

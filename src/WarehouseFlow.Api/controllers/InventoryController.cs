@@ -5,14 +5,14 @@ using WarehouseFlow.Api.Controllers;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 
-namespace InventoryController
+namespace WarehouseFlow.Api.Controllers
 {
-    [Route("api/v1/inventory")]
+    [Route("api/v1/inventories")]
     public sealed class InventoryController(IInventoryService inventoryService) : BaseController
     {
-        [HttpPost("addInventory")]
+        [HttpPost]
         [Authorize(Roles = "Super_Admin, Admin, Warehouse_Manager")]
-        [ProducesResponseType(typeof(ApiResponse<Inventory>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<InventoryResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory(
             InventoryDto request,

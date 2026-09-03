@@ -17,7 +17,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
         ILogger<OrderService> logger
     ) : IOrderService
     {
-        public async Task<Order> CreateOrder(
+        public async Task<OrderResponse> CreateOrder(
             OrderDto orderDto,
             string applicationUserId,
             CancellationToken cancellationToken
@@ -48,7 +48,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
 
                     var inventoryReservations = await inventoryService.ReserveInventoryAsync(
                         product.Id,
-                        orderItemDto.quantity,
+                        orderItemDto.Quantity,
                         cancellationToken
                     );
 
@@ -68,12 +68,12 @@ namespace WarehouseFlow.Infrastructure.Implementations
                     var newOrderItem = new OrderItem
                     {
                         ProductId = product.Id,
-                        Quantity = orderItemDto.quantity,
+                        Quantity = orderItemDto.Quantity,
                         UnitPrice = product.UnitPrice,
                     };
 
                     order.OrderItems.Add(newOrderItem);
-                    totalAmount += product.UnitPrice * orderItemDto.quantity;
+                    totalAmount += product.UnitPrice * orderItemDto.Quantity;
                 }
 
                 order.TotalAmount = totalAmount;
@@ -89,8 +89,8 @@ namespace WarehouseFlow.Infrastructure.Implementations
                     order.CustomerId,
                     order.TotalAmount
                 );
-
-                return order;
+                var orderResponse = OrderResponseFactory.FromOrder(order);
+                return orderResponse;
             }
             catch
             {
@@ -222,8 +222,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
             var affectedRows = await dbContext
                 .Orders.Where(order => order.Id == orderId)
                 .ExecuteUpdateAsync(
-                    setters =>
-                        setters.SetProperty(order => order.OrderStatus, OrderStatus.Paid),
+                    setters => setters.SetProperty(order => order.OrderStatus, OrderStatus.Paid),
                     cancellationToken
                 );
 

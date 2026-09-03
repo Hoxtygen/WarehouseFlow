@@ -6,14 +6,14 @@ using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Entities;
 
 namespace WarehouseFlow.Api.Controllers;
-[Route("api/v1/product")]
+[Route("api/v1/products")]
 public sealed class ProductController(IProductService productService) : BaseController
 {
-    [HttpPost("createProduct")]
+    [HttpPost]
     [Authorize(Roles = "Super_Admin, Admin")]
-    [ProducesResponseType(typeof(ApiResponse<Product>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<ProductResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> createProduct(
+    public async Task<IActionResult> CreateProduct(
         NewProductDto request,
         CancellationToken cancellationToken
     )
@@ -21,7 +21,7 @@ public sealed class ProductController(IProductService productService) : BaseCont
         var result = await productService.createProduct(request, cancellationToken);
         return Created(
             result,
-            nameof(createProduct),
+            nameof(CreateProduct),
             new { id = result.Id },
             "New product added successfully."
         );

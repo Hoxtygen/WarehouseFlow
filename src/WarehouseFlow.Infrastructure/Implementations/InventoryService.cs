@@ -14,7 +14,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
         ILogger<InventoryService> logger
     ) : IInventoryService
     {
-        public async Task<Inventory> CreateInventory(
+        public async Task<InventoryResponse> CreateInventory(
             InventoryDto inventoryDto,
             CancellationToken cancellationToken = default
         )
@@ -105,7 +105,7 @@ namespace WarehouseFlow.Infrastructure.Implementations
                 inventory.WarehouseId
             );
 
-            return inventory;
+            return InventoryResponseFactory.FromInventory(inventory);
         }
 
         public async Task<Inventory> GetInventoryByIdAsync(

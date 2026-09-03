@@ -16,7 +16,7 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
     private const int RandomSkuLength = 5;
     private const int MaxSkuAttempts = 5;
 
-    public async Task<Product> createProduct(
+    public async Task<ProductResponse> createProduct(
         NewProductDto newProductDto,
         CancellationToken cancellationToken = default
     )
@@ -58,7 +58,7 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
             dbContext.Products.Add(newProduct);
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Product created with SKU {Sku}", sku);
-            return newProduct;
+            return ProductResponseFactory.FromProduct(newProduct);
         }
 
         throw new InvalidOperationException("Could not generate a unique product SKU.");
@@ -96,7 +96,7 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
     {
         var product = await dbContext
             .Products.AsNoTracking()
-            .FirstOrDefaultAsync(product => product.Id == productId);
+            .FirstOrDefaultAsync(product => product.Id == productId, cancellationToken);
         if (product is null)
         {
             logger.LogError($"Prouct wth ID {productId} not found");
