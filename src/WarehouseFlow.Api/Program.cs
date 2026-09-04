@@ -9,17 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
-using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Api.Middleware;
 using WarehouseFlow.Application;
 using WarehouseFlow.Application.Dtos;
-using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Enum;
 using WarehouseFlow.Infrastructure;
 using WarehouseFlow.Infrastructure.BackgroundServices;
 using WarehouseFlow.Infrastructure.Data;
 using WarehouseFlow.Infrastructure.Identity;
-using WarehouseFlow.Infrastructure.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,13 +26,6 @@ builder.Configuration.AddCommandLine(args);
 // Register layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-builder.Services.AddScoped<IWarehouseService, WarehouseService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 builder.Services.AddHostedService<ReservationCleanupService>();
 
@@ -139,9 +129,7 @@ builder
     .Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy =
-            JsonNamingPolicy
-            .CamelCase;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     })
@@ -154,7 +142,9 @@ builder
 
             var errors = new Dictionary<string, string[]>();
 
-            foreach (var stateEntry in context.ModelState.Where(entry => entry.Value?.Errors.Count > 0))
+            foreach (
+                var stateEntry in context.ModelState.Where(entry => entry.Value?.Errors.Count > 0)
+            )
             {
                 var errorMessages = stateEntry
                     .Value!.Errors.Select(error =>
@@ -163,11 +153,9 @@ builder
                             error.Exception is JsonException
                             || error.Exception?.InnerException is JsonException;
 
-                        return isRoleJsonError
-                            && stateEntry.Key.EndsWith(
-                                "role",
-                                StringComparison.OrdinalIgnoreCase
-                            )
+                        return
+                            isRoleJsonError
+                            && stateEntry.Key.EndsWith("role", StringComparison.OrdinalIgnoreCase)
                             ? roleError
                             : error.ErrorMessage;
                     })

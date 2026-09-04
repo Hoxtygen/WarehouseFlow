@@ -9,4 +9,5 @@ public interface IWarehouseService
         CancellationToken cancellationToken = default
     );
     Task<bool> WarehouseExists(Guid warehouseId, CancellationToken cancellationToken);
+    public Task<int> GetWarehouseCapacity(Guid warehouseId, CancellationToken cancellationToken);
 }

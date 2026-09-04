@@ -30,7 +30,7 @@ public sealed class PaymentController(IPaymentService paymentService) : BaseCont
                 statusCode: StatusCodes.Status401Unauthorized
             );
         }
-        var result = await paymentService.ProcessPaymentAsync(request, Guid.Parse(applicationUserId), cancellationToken);
+        var result = await paymentService.ProcessPaymentAsync(request, applicationUserId, cancellationToken);
         return Created(
             result,
             nameof(ProcessPayment),

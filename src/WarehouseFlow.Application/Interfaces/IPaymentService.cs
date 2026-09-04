@@ -6,7 +6,7 @@ public interface IPaymentService
 {
     Task<PaymentResult> ProcessPaymentAsync(
         PaymentDto paymentDto,
-        Guid applicationUserId,
+        string applicationUserId,
         CancellationToken cancellationToken = default
     );
 }

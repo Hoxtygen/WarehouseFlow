@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using WarehouseFlow.Api.Contracts;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
-using WarehouseFlow.Domain.Entities;
 
 namespace WarehouseFlow.Api.Controllers;
 [Route("api/v1/products")]
@@ -18,7 +17,7 @@ public sealed class ProductController(IProductService productService) : BaseCont
         CancellationToken cancellationToken
     )
     {
-        var result = await productService.createProduct(request, cancellationToken);
+        var result = await productService.CreateProduct(request, cancellationToken);
         return Created(
             result,
             nameof(CreateProduct),

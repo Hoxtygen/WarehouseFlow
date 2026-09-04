@@ -15,11 +15,21 @@ namespace WarehouseFlow.Application.Interfaces
             CancellationToken cancellationToken = default
         );
 
-        Task<Inventory> GetInventoryByIdAsync(Guid inventoryId, CancellationToken cancellationToken = default);
+        Task<Inventory> GetInventoryByIdAsync(
+            Guid inventoryId,
+            CancellationToken cancellationToken = default
+        );
 
         Task<Inventory> GetInventoryByProductAndWarehouseAsync(
             Guid productId,
             Guid warehouseId,
+            CancellationToken cancellationToken = default
+        );
+        Task ReleaseReservedStockAsync(
+            Guid warehouseId,
+            Guid productId,
+            int quantity,
+            DateTime now,
             CancellationToken cancellationToken = default
         );
     }

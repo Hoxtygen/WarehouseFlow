@@ -1,28 +1,27 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Entities;
 using WarehouseFlow.Domain.Enum;
-using WarehouseFlow.Infrastructure.Data;
 
-namespace WarehouseFlow.Infrastructure.Implementations;
+namespace WarehouseFlow.Application.Services;
 
 public sealed class PaymentService(
+    IPaymentRepository paymentRepository,
     ICustomerService customerService,
     IOrderService orderService,
     IInventoryService inventoryService,
-    AppDbContext dbContext,
+    IUnitOfWork unitOfWork,
     ILogger<PaymentService> logger
 ) : IPaymentService
 {
     public async Task<PaymentResult> ProcessPaymentAsync(
         PaymentDto paymentDto,
-        Guid applicationUserId,
+        string applicationUserId,
         CancellationToken cancellationToken = default
     )
     {
-        var customer = await customerService.GetCustomerAsync(applicationUserId);
+        var customer = await customerService.GetCustomerByApplicationUserIdAsync(applicationUserId);
         var order = await orderService.GetOrderByIdAsync(paymentDto.OrderId, cancellationToken);
 
         if (order.TotalAmount != paymentDto.Amount)
@@ -56,9 +55,7 @@ public sealed class PaymentService(
             throw new InvalidOperationException("Only pending orders can be paid");
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            cancellationToken
-        );
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
@@ -81,10 +78,10 @@ public sealed class PaymentService(
                 CustomerId = customer.Id,
                 Amount = paymentDto.Amount,
             };
-            dbContext.Payments.Add(payment);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await paymentRepository.AddAsync(payment);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+            await unitOfWork.CommitAsync(cancellationToken);
 
             logger.LogInformation(
                 "Payment of {Amount} processed for Order {OrderId} by Customer {CustomerId}",
@@ -101,7 +98,7 @@ public sealed class PaymentService(
         }
         catch
         {
-            await transaction.RollbackAsync(cancellationToken);
+            await unitOfWork.RollbackAsync(cancellationToken);
             throw;
         }
     }

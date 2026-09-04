@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using WarehouseFlow.Application.Interfaces;
+using WarehouseFlow.Application.Services;
 
 namespace WarehouseFlow.Application
 {
@@ -6,8 +8,12 @@ namespace WarehouseFlow.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            // Example: register use cases, CQRS handlers, mediators
-            // services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<IInventoryService, InventoryService>();
+            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IWarehouseService, WarehouseService>();
 
             return services;
         }

@@ -10,20 +10,20 @@ public class ProductResponse
     public decimal UnitPrice { get; set; }
     public required string Brand { get; set; } = string.Empty;
     public required string SKU { get; set; } = string.Empty;
-    public required ProductCategory ProductCategory { get; set; }
+    public required string ProductCategory { get; set; }
 }
 
 public static class ProductResponseFactory
 {
-    public static ProductResponse FromProduct(Product product) =>
+    public static ProductResponse FromProduct(Product product, string? categoryName = null) =>
         new()
         {
             Id = product.Id,
             ProductName = product.ProductName,
             Description = product.Description,
             UnitPrice = product.UnitPrice,
-            Brand = product.Brand,
-            ProductCategory = product.ProductCategory,
+            Brand = product.Brand!,
+            ProductCategory = categoryName ?? product.ProductCategory?.CategoryName ?? string.Empty,
             SKU = product.SKU,
         };
 }

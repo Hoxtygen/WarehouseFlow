@@ -1,43 +1,46 @@
 using System.Security.Cryptography;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Domain.Entities;
 using WarehouseFlow.Domain.Exceptions;
-using WarehouseFlow.Infrastructure.Data;
 
-namespace WarehouseFlow.Infrastructure.Implementations;
+namespace WarehouseFlow.Application.Services;
 
-public sealed class ProductService(AppDbContext dbContext, ILogger<ProductService> logger)
-    : IProductService
+public sealed class ProductService(
+    IProductRepository productRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<ProductService> logger
+) : IProductService
 {
     private const string SkuCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private const int RandomSkuLength = 5;
     private const int MaxSkuAttempts = 5;
 
-    public async Task<ProductResponse> createProduct(
+    public async Task<ProductResponse> CreateProduct(
         NewProductDto newProductDto,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
-        var categoryName = await dbContext
-            .ProductCategories.Where(category => category.Id == newProductDto.ProductCategoryId)
-            .Select(category => category.CategoryName)
-            .SingleOrDefaultAsync(cancellationToken);
+        var productCategoryName = await productRepository.GetCategoryNameAsync(
+            newProductDto.ProductCategoryId
+        );
 
-        if (categoryName is null)
+        if (productCategoryName is null)
         {
+            logger.LogInformation($"Product category [{productCategoryName}] not found/ is null", productCategoryName);
             throw new InvalidOperationException("The selected product category does not exist.");
         }
 
         for (var attempt = 0; attempt < MaxSkuAttempts; attempt++)
         {
-            var sku = GenerateSku(newProductDto.Brand, categoryName, newProductDto.ProductName);
-            var skuExists = await dbContext.Products.AnyAsync(
-                product => product.SKU == sku,
-                cancellationToken
+            var sku = GenerateSku(
+                newProductDto.Brand,
+                productCategoryName,
+                newProductDto.ProductName
             );
+
+            var skuExists = await productRepository.SkuExistsAsync(sku, cancellationToken);
 
             if (skuExists)
             {
@@ -55,13 +58,35 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
                 ImageUrl = newProductDto.ImageUrl,
             };
 
-            dbContext.Products.Add(newProduct);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Product created with SKU {Sku}", sku);
-            return ProductResponseFactory.FromProduct(newProduct);
+            await productRepository.AddAsync(newProduct);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Product [{ProductName}] created with SKU {Sku}", sku, newProduct.ProductName);
+
+            return ProductResponseFactory.FromProduct(newProduct, productCategoryName);
+        }
+        throw new InvalidOperationException("Could not generate a unique product SKU.");
+    }
+
+    public async Task<ProductResponse> GetProductAsync(
+        Guid productId,
+        CancellationToken cancellationToken
+    )
+    {
+        var product = await productRepository.GetByIdAsync(productId, cancellationToken);
+
+        if (product is null)
+        {
+            logger.LogError($"Prouct wth ID {productId} not found");
+            throw new NotFoundException($"Prouct wth ID {productId} not found");
         }
 
-        throw new InvalidOperationException("Could not generate a unique product SKU.");
+        return ProductResponseFactory.FromProduct(product);
+    }
+
+    public Task<bool> ProductExists(Guid productId, CancellationToken cancellationToken = default)
+    {
+        return productRepository.ExistsAsync(productId, cancellationToken);
     }
 
     private static string GenerateSku(string brand, string category, string productName)
@@ -91,23 +116,4 @@ public sealed class ProductService(AppDbContext dbContext, ILogger<ProductServic
             ? alphanumeric[..3].ToUpperInvariant()
             : alphanumeric.ToUpperInvariant().PadRight(3, 'X');
     }
-
-    public async Task<Product> GetProductAsync(Guid productId, CancellationToken cancellationToken)
-    {
-        var product = await dbContext
-            .Products.AsNoTracking()
-            .FirstOrDefaultAsync(product => product.Id == productId, cancellationToken);
-        if (product is null)
-        {
-            logger.LogError($"Prouct wth ID {productId} not found");
-            throw new NotFoundException($"Prouct wth ID {productId} not found");
-        }
-
-        return product;
-    }
-
-      public async Task<bool> ProductExists(Guid productId, CancellationToken cancellationToken)
-        {
-            return await dbContext.Products.AnyAsync(p => p.Id == productId, cancellationToken);
-        }
 }
