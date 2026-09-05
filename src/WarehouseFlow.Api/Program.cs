@@ -231,6 +231,9 @@ builder
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            ClockSkew = TimeSpan.Zero,
 
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
@@ -268,6 +271,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -280,5 +284,19 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapFallback(async context =>
+{
+    context.Response.StatusCode = StatusCodes.Status404NotFound;
+    context.Response.ContentType = "application/problem+json";
+
+    var problemDetails = new ProblemDetails
+    {
+        Status = StatusCodes.Status404NotFound,
+        Title = "The requested endpoint was not found.",
+        Type = "https://httpstatuses.com/404",
+    };
+    await context.Response.WriteAsJsonAsync(problemDetails);
+});
 
 app.Run();

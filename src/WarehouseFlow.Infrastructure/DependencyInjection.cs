@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WarehouseFlow.Application.Interfaces;
 using WarehouseFlow.Infrastructure.Data;
+using WarehouseFlow.Infrastructure.Data.Interceptors;
 using WarehouseFlow.Infrastructure.Implementations;
 using WarehouseFlow.Infrastructure.Repositories;
 
@@ -15,6 +17,9 @@ namespace WarehouseFlow.Infrastructure
             IConfiguration configuration
         )
         {
+            services.AddHttpContextAccessor();
+            services.AddSingleton<AuditInterceptor>();
+
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("WarehouseFlowDb"))
             );

@@ -20,8 +20,7 @@ public static class IdentitySeeder
 
                 if (!result.Succeeded)
                 {
-                    throw new InvalidOperationException(
-                        $"Could not create role '{role}'.");
+                    throw new InvalidOperationException($"Could not create role '{role}'.");
                 }
             }
         }
@@ -35,10 +34,11 @@ public static class IdentitySeeder
         const string email = "hoxtygen@live.com";
         const string roleName = nameof(UserRole.Super_Admin);
 
-        // var password = configuration["super-admin-password"]
-        //               ?? Environment.GetEnvironmentVariable("IdentitySeed__SuperAdminPassword")
-        //               ?? configuration["IdentitySeed:SuperAdminPassword"];
-        var password = "411!$F10p$";
+        var password =
+            configuration["IdentitySeed:SuperAdminPassword"]
+            ?? throw new InvalidOperationException(
+                "IdentitySeed:SuperAdminPassword must be set via user-secrets or env vars."
+            );
 
         if (string.IsNullOrWhiteSpace(password))
         {

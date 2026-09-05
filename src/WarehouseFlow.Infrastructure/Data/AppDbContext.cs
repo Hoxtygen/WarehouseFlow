@@ -3,13 +3,24 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WarehouseFlow.Application.Dtos;
 using WarehouseFlow.Domain.Entities;
+using WarehouseFlow.Infrastructure.Data.Interceptors;
 
 namespace WarehouseFlow.Infrastructure.Data;
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options) { }
+    private readonly AuditInterceptor _auditInterceptor;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, AuditInterceptor auditInterceptor)
+        : base(options)
+    {
+        _auditInterceptor = auditInterceptor;
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.AddInterceptors(_auditInterceptor);
+    }
 
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Employee> Employees => Set<Employee>();
@@ -21,6 +32,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole, str
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
